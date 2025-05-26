@@ -8,6 +8,13 @@ from tkinter import messagebox, ttk
 import time
 import ctypes
 import winshell
+from java_jdk_installer import install_java
+from android_sdk_installer import install_android_sdk
+from node_installer import install_nodejs
+from python_installer import install_python
+from adb_installer import add_adb_to_path
+from build_tools_installer import install_android_components
+from appium_installer import install_appium, install_flutter_driver
 
 # Helper Functions
 def get_resource_path(relative_path):
@@ -82,8 +89,9 @@ class InstallerGUI:
             ("Checking Node.js...", self.check_node),
             ("Checking Java...", self.check_java),
             ("Checking Android SDK...", self.check_adb),
-            ("Installing Appium...", self.install_appium),
-            ("Installing Appium Flutter Driver...", self.install_flutter_driver),
+            ("Installing Appium...", self.check_appium_flutter_driver),
+            # ("Installing Appium...", self.install_appium),
+            # ("Installing Appium Flutter Driver...", self.install_flutter_driver),
             ("Installing Appium-Python-Client...", self.install_python_client),
             ("Extracting files...", self.extract_files),
             ("Creating Desktop Shortcut...", self.create_shortcut),
@@ -104,59 +112,145 @@ class InstallerGUI:
 
     def check_python(self):
         if not shutil.which("python"):
-            messagebox.showerror("Error", "Python not found! Install Python manually first.")
-            sys.exit()
+            answer = messagebox.askyesno("Python Not Found", "Python is not installed. Do you want to install it automatically?")
+            if answer:
+                try:
+                    install_python()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to install Python.\n\n{e}")
+                    sys.exit()
+            else:
+                sys.exit()
 
     def check_node(self):
         if not shutil.which("node"):
-            messagebox.showerror("Error", "Node.js not found! Install Node.js manually first.")
-            sys.exit()
+            answer = messagebox.askyesno("Node.js Not Found", "Node.js is not installed. Do you want to install it automatically?")
+            if answer:
+                try:
+                    install_nodejs()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to install Node.js.\n\n{e}")
+                    sys.exit()
+            else:
+                sys.exit()
+
 
     def check_java(self):
         if not shutil.which("java"):
-            messagebox.showerror("Error", "Java JDK not found! Install Java manually first.")
-            sys.exit()
+            answer = messagebox.askyesno("java jdk Not Found", "java jdk is not installed. Do you want to install it automatically?")
+            if answer:
+                try:
+                    install_java()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to install java jdk.\n\n{e}")
+                    sys.exit()
+            else:
+                sys.exit()
+
+    def check_android_sdk():
+        if not shutil.which("adb"):
+            answer = messagebox.askyesno("Android SDK Not Found", "Android SDK (adb) is not installed or not in PATH. Do you want to install it automatically?")
+            if answer:
+                try:
+                    install_android_sdk()
+                    install_android_components()
+                    add_adb_to_path()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to install Android SDK.\n\n{e}")
+                    sys.exit(1)
+            else:
+                sys.exit()
 
     def check_adb(self):
         if not shutil.which("adb"):
             messagebox.showerror("Error", "ADB tools not found! Install Android SDK manually first.")
             sys.exit()
 
-    def install_appium(self):
+    def check_appium_flutter_driver(self):
         if not shutil.which("appium"):
-            subprocess.check_call(["npm", "install", "-g", "appium"])
+            answer = messagebox.askyesno(
+                "Appium Not Found",
+                "Appium is not installed or not in PATH. Do you want to install it automatically?"
+            )
+            if answer:
+                try:
+                    install_appium()
+                    install_flutter_driver()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to install Appium or Flutter driver.\n\n{e}")
+                    sys.exit(1)
+            else:
+                sys.exit(1)
 
-    def install_flutter_driver(self):
         try:
             appium_path = shutil.which("appium")
-            if appium_path is None:
-                raise FileNotFoundError("Appium not found in PATH. Make sure it's installed via 'npm install -g appium' and PATH is set correctly.")
-
-            print(f"\nFound appium at: {appium_path}")
-            
             result = subprocess.run(
-                [appium_path, "driver", "install", "--source=npm", "appium-flutter-driver"],
+                [appium_path, "plugin", "list", "--installed"],
                 capture_output=True,
-                text=True
+                text=True,
+                check=True  # raises CalledProcessError if returncode != 0
             )
+            output = result.stdout.lower().strip() if result.stdout else ""
 
-            if result.returncode != 0:
-                if "already installed" in result.stderr.lower():
-                    print("Appium Flutter Driver is already installed. Skipping installation.")
-                    return
+            if "flutter" not in output:
+                answer = messagebox.askyesno(
+                    "Flutter Driver Not Found",
+                    "appium-flutter-driver is not installed. Do you want to install it automatically?"
+                )
+                if answer:
+                    try:
+                        install_flutter_driver()
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to install Flutter driver.\n\n{e}")
+                        sys.exit(1)
                 else:
-                    raise subprocess.CalledProcessError(result.returncode, result.args, output=result.stdout, stderr=result.stderr)
-
+                    sys.exit(1)
+            else:
+                print("✅ appium-flutter-driver is installed.")
         except subprocess.CalledProcessError as e:
-            print(f"Subprocess error:\n{e.stderr}")
-            messagebox.showerror("Error", f"Failed to install Appium Flutter Driver.\n\n{e.stderr}")
-            sys.exit()
-        except FileNotFoundError as e:
-            print(f"FileNotFoundError: {e}")
-            messagebox.showerror("Error", str(e))
-            sys.exit()
+            messagebox.showerror("Error", f"Failed to run Appium plugin list command.\n\n{e}")
+            sys.exit(1)
+        except FileNotFoundError:
+            messagebox.showerror("Error", "Appium executable not found. Please install Appium and ensure it's in your PATH.")
+            sys.exit(1)
+        except Exception as e:
+            messagebox.showerror("Error", f"Unexpected error while checking Appium plugins.\n\n{e}")
+            sys.exit(1)
 
 
+    # def install_appium(self):
+    #     if not shutil.which("appium"):
+    #         subprocess.check_call(["npm", "install", "-g", "appium"])
+
+    # def install_flutter_driver(self):
+    #     try:
+    #         appium_path = shutil.which("appium")
+    #         if appium_path is None:
+    #             raise FileNotFoundError("Appium not found in PATH. Make sure it's installed via 'npm install -g appium' and PATH is set correctly.")
+
+    #         print(f"\nFound appium at: {appium_path}")
+            
+    #         result = subprocess.run(
+    #             [appium_path, "driver", "install", "--source=npm", "appium-flutter-driver"],
+    #             capture_output=True,
+    #             text=True
+    #         )
+
+    #         if result.returncode != 0:
+    #             if "already installed" in result.stderr.lower():
+    #                 print("Appium Flutter Driver is already installed. Skipping installation.")
+    #                 return
+    #             else:
+    #                 raise subprocess.CalledProcessError(result.returncode, result.args, output=result.stdout, stderr=result.stderr)
+
+    #     except subprocess.CalledProcessError as e:
+    #         print(f"Subprocess error:\n{e.stderr}")
+    #         messagebox.showerror("Error", f"Failed to install Appium Flutter Driver.\n\n{e.stderr}")
+    #         sys.exit()
+    #     except FileNotFoundError as e:
+    #         print(f"FileNotFoundError: {e}")
+    #         messagebox.showerror("Error", str(e))
+    #         sys.exit()
 
     def install_python_client(self):
         install_python_package("Appium-Python-Client")
