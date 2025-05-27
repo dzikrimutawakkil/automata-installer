@@ -13,3 +13,8 @@ config.local.js
 
 # Ignore the __pycache__ directory (relevant to your screenshot)
 __pycache__/
+
+# PyInstaller build artifacts
+build/
+dist/
+*.spec
