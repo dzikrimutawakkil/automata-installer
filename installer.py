@@ -24,12 +24,12 @@ def get_resource_path(relative_path):
     return os.path.join(os.path.abspath("."), relative_path)
 
 def run_as_admin():
-    if sys.version_info[0] == 3 and sys.version_info[1] >= 5:
-        import ctypes
-        if not ctypes.windll.shell32.IsUserAnAdmin():
-            # Relaunch as admin
+    if not ctypes.windll.shell32.IsUserAnAdmin():
+        # Relaunch as admin with a special flag
+        params = " ".join(f'"{arg}"' for arg in sys.argv)
+        if "--elevated" not in params:
             ctypes.windll.shell32.ShellExecuteW(
-                None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+                None, "runas", sys.executable, f"{params} --elevated", None, 1)
             sys.exit()
 
 run_as_admin()
@@ -282,7 +282,10 @@ class InstallerGUI:
             print(f"Shortcut creation failed: {e}")
 
 if __name__ == "__main__":
-    elevate()  # Ask admin permission
-    root = tk.Tk()
-    app = InstallerGUI(root)
-    root.mainloop()
+    if "--elevated" not in sys.argv:
+        run_as_admin()
+    else:
+        root = tk.Tk()
+        app = InstallerGUI(root)
+        root.mainloop()
+
