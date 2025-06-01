@@ -3,8 +3,20 @@ import shutil
 import subprocess
 
 def install_appium():
+    npm_path = shutil.which("npm")
+    if not npm_path:
+        print("❌ NPM not found in PATH. Please install Node.js first.")
+        return
+
+    print(f"✅ NPM found at: {npm_path}")
     if not shutil.which("appium"):
-        subprocess.check_call(["npm", "install", "-g", "appium"])
+        try:
+            subprocess.check_call([npm_path, "install", "-g", "appium"])
+            print("✅ Appium installed successfully.")
+            return
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Failed to install Appium: {e}")
+            return e
 
 def install_flutter_driver():
     try:

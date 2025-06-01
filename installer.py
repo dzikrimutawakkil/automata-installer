@@ -88,7 +88,7 @@ class InstallerGUI:
             ("Checking Python...", self.check_python),
             ("Checking Node.js...", self.check_node),
             ("Checking Java...", self.check_java),
-            ("Checking Android SDK...", self.check_adb),
+            ("Checking Android SDK...", self.check_android_sdk),
             ("Installing Appium...", self.check_appium_flutter_driver),
             # ("Installing Appium...", self.install_appium),
             # ("Installing Appium Flutter Driver...", self.install_flutter_driver),
@@ -147,7 +147,7 @@ class InstallerGUI:
             else:
                 sys.exit()
 
-    def check_android_sdk():
+    def check_android_sdk(self):
         if not shutil.which("adb"):
             answer = messagebox.askyesno("Android SDK Not Found", "Android SDK (adb) is not installed or not in PATH. Do you want to install it automatically?")
             if answer:
