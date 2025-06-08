@@ -14,7 +14,7 @@ from node_installer import install_nodejs
 from python_installer import install_python
 from adb_installer import add_adb_to_path
 from build_tools_installer import install_android_components
-from appium_installer import install_appium, install_flutter_driver
+from appium_installer import install_appium, install_flutter_driver, patch_env_path
 
 # Helper Functions
 def get_resource_path(relative_path):
@@ -174,20 +174,27 @@ class InstallerGUI:
             if answer:
                 try:
                     install_appium()
+                    patch_env_path()
                     install_flutter_driver()
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to install Appium or Flutter driver.\n\n{e}")
                     sys.exit(1)
             else:
                 sys.exit(1)
+        else:
+            patch_env_path()  # Ensure PATH is patched even if appium already exists
 
         try:
             appium_path = shutil.which("appium")
+            if not appium_path:
+                messagebox.showerror("Error", "Appium is installed but not found in PATH.\nTry restarting this program.")
+                sys.exit(1)
+
             result = subprocess.run(
                 [appium_path, "plugin", "list", "--installed"],
                 capture_output=True,
                 text=True,
-                check=True  # raises CalledProcessError if returncode != 0
+                check=True
             )
             output = result.stdout.lower().strip() if result.stdout else ""
 
