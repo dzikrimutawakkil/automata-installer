@@ -3,6 +3,7 @@ import subprocess
 
 def install_android_components():
     sdk_root = r"C:\Android\sdk"
+    jdk_path = r"C:\Program Files\Java\jdk17.0.15_6"
     tools_path = os.path.join(sdk_root, "cmdline-tools", "latest", "bin")
     sdkmanager = os.path.join(tools_path, "sdkmanager.bat")
 
@@ -10,13 +11,17 @@ def install_android_components():
         print("❌ sdkmanager.bat not found. Please install Android SDK command line tools first.")
         return
 
+    # Refresh environment variables for this process
+    os.environ["JAVA_HOME"] = jdk_path
+    os.environ["PATH"] = os.path.join(jdk_path, "bin") + os.pathsep + os.environ["PATH"]
+    os.environ["ANDROID_SDK_ROOT"] = sdk_root
+    os.environ["ANDROID_HOME"] = sdk_root
+
     env = os.environ.copy()
-    env["ANDROID_SDK_ROOT"] = sdk_root
-    env["ANDROID_HOME"] = sdk_root
 
     components = [
         "build-tools;34.0.0",
-        "platforms;android-34"  # Contoh install platform SDK Android API 34
+        "platforms;android-34"
     ]
 
     # Accept all licenses
@@ -28,12 +33,14 @@ def install_android_components():
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
+
     if accept.returncode != 0:
         print("⚠️ Error while accepting licenses:")
-        print(accept.stderr.decode())
+        print("STDOUT:", accept.stdout.decode())
+        print("STDERR:", accept.stderr.decode())
         return
 
-    # Install components one by one
+    # Install components
     for component in components:
         print(f"⬇️ Installing {component} ...")
         result = subprocess.run(
