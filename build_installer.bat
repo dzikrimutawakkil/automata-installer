@@ -9,6 +9,8 @@ pyinstaller --onefile ^
   --name "AutoMata-Test Installer" ^
   --add-data "commandlinetools.zip;." ^
   --add-data "java-17.zip;." ^
+  --icon=logo.ico ^
+  --add-data "logo.ico;." ^
   --add-data "AutoMata-Test Tools.zip;." ^
   installer.py
 
