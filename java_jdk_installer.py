@@ -7,7 +7,7 @@ import winreg
 def install_java():
     zip_name = "java-17.zip"
     install_dir = "C:\\Program Files\\Java"
-    jdk_folder = os.path.join(install_dir, "jdk-17.0.15_6")
+    jdk_folder = os.path.join(install_dir, "jdk17.0.15_6")
 
     print("Extracting Java JDK...")
     zip_path = get_resource_path(zip_name)

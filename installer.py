@@ -25,13 +25,12 @@ def get_resource_path(relative_path):
 
 def run_as_admin():
     if not ctypes.windll.shell32.IsUserAnAdmin():
-        # Relaunch as admin with a special flag
-        params = " ".join(f'"{arg}"' for arg in sys.argv)
-        if "--elevated" not in params:
-            ctypes.windll.shell32.ShellExecuteW(
-                None, "runas", sys.executable, f"{params} --elevated", None, 1)
-            sys.exit()
-
+        script = os.path.abspath(sys.argv[0])
+        params = ' '.join([f'"{x}"' for x in sys.argv[1:] if x != "--elevated"])
+        ctypes.windll.shell32.ShellExecuteW(
+            None, "runas", sys.executable, f'"{script}" --elevated {params}', None, 1)
+        sys.exit()
+        
 run_as_admin()
 
 
